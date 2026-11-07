@@ -1,7 +1,4 @@
--- ========================================================
 -- SustentaMed - Dados Iniciais de Teste (Seed Data)
--- ========================================================
-
 USE sistema_saude;
 
 -- 1. Unidades de Saude (UBS)
