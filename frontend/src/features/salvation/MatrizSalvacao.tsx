@@ -1,5 +1,9 @@
 
 import { useState } from 'react'
+import packageIcon from '../../assets/icons/package.svg'
+import closeIcon from '../../assets/icons/close.svg'
+import alertIcon from '../../assets/icons/alert.svg'
+import clockIcon from '../../assets/icons/clock.svg'
 
 type Lote = {
   id: number
@@ -151,25 +155,25 @@ function MatrizSalvacao() {
             titulo: 'Lotes monitorados',
             valor: dadosIniciais.length,
             cor: 'text-white',
-            icone: '▦',
+            icone: packageIcon,
           },
           {
             titulo: 'Vencidos',
             valor: vencidos,
             cor: 'text-red-400',
-            icone: '×',
+            icone: closeIcon,
           },
           {
             titulo: 'Prioridade crítica',
             valor: criticos,
             cor: 'text-orange-400',
-            icone: '!',
+            icone: alertIcon,
           },
           {
             titulo: 'Precisam de atenção',
             valor: atencao,
             cor: 'text-yellow-400',
-            icone: '◷',
+            icone: clockIcon,
           },
         ].map((item) => (
           <div
@@ -178,7 +182,12 @@ function MatrizSalvacao() {
           >
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm text-[#829187]">{item.titulo}</p>
-              <span className={`text-xl ${item.cor}`}>{item.icone}</span>
+              <img
+                src={item.icone}
+                alt=""
+                aria-hidden="true"
+                className={`ui-icon h-5 w-5 ${item.cor}`}
+              />
             </div>
 
             <p className={`text-3xl font-semibold ${item.cor}`}>
@@ -194,7 +203,7 @@ function MatrizSalvacao() {
         </h3>
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-          <div className="rounded-lg bg-red-500/5 p-4">
+          <div className="priority-level priority-level-red rounded-lg border border-transparent bg-red-500/5 p-4">
             <span className="text-sm font-semibold text-red-400">
               Vencido
             </span>
@@ -203,7 +212,7 @@ function MatrizSalvacao() {
             </p>
           </div>
 
-          <div className="rounded-lg bg-orange-500/5 p-4">
+          <div className="priority-level priority-level-orange rounded-lg border border-transparent bg-orange-500/5 p-4">
             <span className="text-sm font-semibold text-orange-400">
               Crítico
             </span>
@@ -212,7 +221,7 @@ function MatrizSalvacao() {
             </p>
           </div>
 
-          <div className="rounded-lg bg-yellow-500/5 p-4">
+          <div className="priority-level priority-level-yellow rounded-lg border border-transparent bg-yellow-500/5 p-4">
             <span className="text-sm font-semibold text-yellow-400">
               Atenção
             </span>
@@ -221,7 +230,7 @@ function MatrizSalvacao() {
             </p>
           </div>
 
-          <div className="rounded-lg bg-emerald-500/5 p-4">
+          <div className="priority-level priority-level-normal rounded-lg border border-transparent bg-emerald-500/5 p-4">
             <span className="text-sm font-semibold text-emerald-400">
               Normal
             </span>
@@ -244,19 +253,19 @@ function MatrizSalvacao() {
             </p>
           </div>
 
-          <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="flex flex-col gap-3 lg:flex-row">
             <input
               type="text"
               placeholder="Buscar medicamento ou UBS..."
               value={pesquisa}
               onChange={(e) => setPesquisa(e.target.value)}
-              className="rounded-lg border border-[#35443a] bg-[#0e1712] px-4 py-3 text-sm text-white outline-none focus:border-[#4b9b69]"
+              className="w-full min-w-0 rounded-lg border border-[#35443a] bg-[#0e1712] px-4 py-2 text-sm text-white outline-none focus:border-[#4b9b69] sm:w-64"
             />
 
             <select
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
-              className="rounded-lg border border-[#35443a] bg-[#0e1712] px-4 py-3 text-sm text-white outline-none"
+              className="w-full rounded-lg border border-[#35443a] bg-[#0e1712] px-4 py-3 text-sm text-white outline-none lg:w-auto"
             >
               <option value="Todos">Todas as prioridades</option>
               <option value="Vencido">Vencidos</option>
