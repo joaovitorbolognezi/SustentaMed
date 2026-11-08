@@ -1,5 +1,9 @@
 
 import { useState } from 'react'
+import packageIcon from '../../assets/icons/package.svg'
+import checkIcon from '../../assets/icons/check.svg'
+import alertIcon from '../../assets/icons/alert.svg'
+import closeIcon from '../../assets/icons/close.svg'
 
 type Lote = {
   id: number
@@ -145,10 +149,10 @@ function Estoque() {
 
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
-          { titulo: 'Total de lotes', valor: total, cor: 'text-white', icone: '▦' },
-          { titulo: 'Disponíveis', valor: disponiveis, cor: 'text-emerald-400', icone: '✓' },
-          { titulo: 'Próximos do vencimento', valor: proximos, cor: 'text-yellow-400', icone: '!' },
-          { titulo: 'Vencidos', valor: vencidos, cor: 'text-red-400', icone: '×' },
+          { titulo: 'Total de lotes', valor: total, cor: 'text-white', icone: packageIcon },
+          { titulo: 'Disponíveis', valor: disponiveis, cor: 'text-emerald-400', icone: checkIcon },
+          { titulo: 'Próximos do vencimento', valor: proximos, cor: 'text-yellow-400', icone: alertIcon },
+          { titulo: 'Vencidos', valor: vencidos, cor: 'text-red-400', icone: closeIcon },
         ].map((item) => (
           <div
             key={item.titulo}
@@ -156,7 +160,12 @@ function Estoque() {
           >
             <div className="mb-4 flex items-center justify-between">
               <p className="text-sm text-[#829187]">{item.titulo}</p>
-              <span className={`text-xl ${item.cor}`}>{item.icone}</span>
+              <img
+                src={item.icone}
+                alt=""
+                aria-hidden="true"
+                className={`ui-icon h-5 w-5 ${item.cor}`}
+              />
             </div>
             <p className={`text-3xl font-semibold ${item.cor}`}>
               {item.valor}
@@ -182,7 +191,7 @@ function Estoque() {
               placeholder="Buscar medicamento ou lote..."
               value={pesquisa}
               onChange={(e) => setPesquisa(e.target.value)}
-              className="rounded-lg border border-[#35443a] bg-[#0e1712] px-4 py-2 text-sm text-white outline-none focus:border-[#4b9b69]"
+              className="w-full min-w-0 rounded-lg border border-[#35443a] bg-[#0e1712] px-4 py-2 text-sm text-white outline-none focus:border-[#4b9b69] sm:w-64"
             />
 
             <select
@@ -263,9 +272,15 @@ function Estoque() {
               </h3>
               <button
                 onClick={() => setModalAberto(false)}
-                className="text-xl text-[#829187] hover:text-white"
+                aria-label="Fechar"
+                className="text-[#829187] hover:text-white"
               >
-                ×
+                <img
+                  src={closeIcon}
+                  alt=""
+                  aria-hidden="true"
+                  className="ui-icon h-5 w-5"
+                />
               </button>
             </div>
 

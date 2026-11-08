@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import loginBg from '../../assets/login.jpeg';
+import arrowRightIcon from '../../assets/icons/arrow-right.svg';
 
 // Estilos compartilhados entre os dois campos do formulário
 const fieldClass = 'grid gap-[0.65rem]';
@@ -122,9 +123,7 @@ export function Login() {
               ].join(' ')}
             >
               <span>Entrar na plataforma</span>
-              <span className="text-[1.2rem]" aria-hidden="true">
-                →
-              </span>
+              <img src={arrowRightIcon} alt="" aria-hidden="true" className="ui-icon h-4 w-4" />
             </button>
           </form>
 
