@@ -152,27 +152,11 @@ private static final String DEFAULT_PASSWORD = ""; // <- Se o seu MySQL tiver se
 
 ---
 
-### 4. Compilar o Projeto
-
-O projeto já contém os arquivos compilados na pasta `bin/`. Se você alterar qualquer código `.java`, recompile com o comando abaixo:
-
-#### No Windows (PowerShell / CMD):
-```powershell
-javac -cp "lib/mysql-connector-j.jar;src" -d bin (Get-ChildItem -Path src -Recurse -Filter "*.java").FullName
-```
-
-#### No Linux / macOS:
-```bash
-javac -cp "lib/mysql-connector-j.jar:src" -d bin $(find src -name "*.java")
-```
-
----
-
-### 5. Executar a Aplicação
+### 4. Executar a Aplicação
 
 Você tem **duas formas** de executar o sistema:
 
-#### Modo A: Menu Interativo no Console (Ideal para apresentação para o professor)
+#### Modo A: Menu Interativo no Console
 * **Pelo Windows:** Dê um duplo clique no arquivo `executar_menu.bat`  
 * **Ou pelo terminal:**
   * **Windows:**
@@ -194,7 +178,7 @@ Você tem **duas formas** de executar o sistema:
 
 ---
 
-#### Modo B: Servidor HTTP REST Nativo (Para integrar com o Frontend React)
+#### Modo B: Servidor HTTP REST Nativo 
 * **Pelo Windows:** Dê um duplo clique no arquivo `iniciar_servidor_http.bat`  
 * **Ou pelo terminal:**
   * **Windows:**
