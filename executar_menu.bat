@@ -1,0 +1,10 @@
+@echo off
+chcp 65001 > nul
+echo ========================================================
+echo   Iniciando SustentaMed - Menu Interativo (Console)
+echo ========================================================
+
+set CP=bin;lib/mysql-connector-j.jar
+
+java -cp "%CP%" com.sustentamed.app.Main
+pause

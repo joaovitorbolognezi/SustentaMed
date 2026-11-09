@@ -1,0 +1,22 @@
+# Bytecodes e compilados
+bin/
+out/
+target/
+*.class
+
+# IDEs e Editores
+.idea/
+*.iml
+.vscode/
+.settings/
+.classpath
+.project
+
+# Arquivos de Sistema
+Thumbs.db
+Desktop.ini
+.DS_Store
+
+# Driver JDBC
+lib/mysql-connector-j-*/
+!lib/mysql-connector-j.jar
