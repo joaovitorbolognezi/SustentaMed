@@ -1,8 +1,3 @@
--- ========================================================
--- SustentaMed - Script de Criacao do Banco de Dados
--- Baseado no Diagrama de Entidade-Relacionamento (DER)
--- ========================================================
-
 CREATE DATABASE IF NOT EXISTS sistema_saude;
 USE sistema_saude;
 
