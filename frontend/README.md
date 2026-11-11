@@ -1,75 +1,44 @@
-# React + TypeScript + Vite
+# SustentaMed — Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Interface React (Vite + TypeScript + Tailwind) para gestão de estoque, matriz de salvação e transferências entre UBS.
 
-Currently, two official plugins are available:
+## Pré-requisitos
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Node.js 18+
+- API Java em `http://localhost:8080` (`com.sustentamed.app.ServidorHttp`)
+- Banco MySQL configurado conforme o README na raiz do projeto
 
-## React Compiler
+## Desenvolvimento
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the ESLint configuration
-
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
-
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
-
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm install
+npm run dev
 ```
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+O proxy em `vite.config.ts` encaminha `/api` para o backend local. Não é necessário configurar CORS manualmente no navegador durante o dev.
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Build
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
-
+```bash
+npm run build
+npm run preview
 ```
+
+Para preview ou deploy sem proxy, defina `VITE_API_BASE_URL=http://localhost:8080` (ou a URL do servidor em produção).
+
+## Estrutura relevante
+
+| Caminho | Função |
+|---------|--------|
+| `src/api/client.ts` | Cliente HTTP da API |
+| `src/features/auth/login.tsx` | Autenticação |
+| `src/features/stock/Estoque.tsx` | Lotes |
+| `src/features/salvation/MatrizSalvacao.tsx` | Priorização por validade |
+| `src/features/transfers/Transferencias.tsx` | Solicitações, criação e status |
+| `src/features/descartes/Descartes.tsx` | Histórico de descartes ecológicos |
+
+Diretrizes visuais: [FRONTEND_GUIDELINES.md](./FRONTEND_GUIDELINES.md).
+
+## Credenciais de teste
+
+Use os usuários do `database/seed.sql` (ex.: `camila.farmacia@ubs.gov.br` / `123456`).

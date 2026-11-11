@@ -1,8 +1,10 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import loginBg from '../../assets/login.jpeg';
 import arrowRightIcon from '../../assets/icons/arrow-right.svg';
+import { ApiError, login as loginApi } from '../../api/client';
+import { setToken, setUsuarioLogado } from '../../api/auth';
 
-// Estilos compartilhados entre os dois campos do formulário
 const fieldClass = 'grid gap-[0.65rem]';
 
 const labelClass = 'text-[0.8rem] font-semibold text-[#dce7df]';
@@ -17,12 +19,31 @@ const inputClass = [
 ].join(' ');
 
 export function Login() {
+  const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [senha, setSenha] = useState('');
+  const [erro, setErro] = useState('');
+  const [carregando, setCarregando] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log({ email, senha });
+    setErro('');
+    setCarregando(true);
+
+    try {
+      const { usuario, token } = await loginApi(email, senha);
+      setToken(token);
+      setUsuarioLogado(usuario);
+      navigate('/estoque', { replace: true });
+    } catch (err) {
+      const mensagem =
+        err instanceof ApiError
+          ? err.message
+          : 'Não foi possível conectar ao servidor. Verifique se a API está em execução.';
+      setErro(mensagem);
+    } finally {
+      setCarregando(false);
+    }
   };
 
   return (
@@ -34,7 +55,6 @@ export function Login() {
         'max-[760px]:grid-cols-1 max-[760px]:overflow-auto',
       ].join(' ')}
     >
-      {/* Lado visual */}
       <section
         aria-label="SustentaMed"
         className="relative isolate flex min-h-[100svh] items-center overflow-hidden p-[clamp(2rem,6vw,5.5rem)] max-[760px]:min-h-[35svh] max-[760px]:p-8"
@@ -62,7 +82,6 @@ export function Login() {
         </div>
       </section>
 
-      {/* Painel do formulário */}
       <section className="grid min-h-[100svh] min-w-0 place-items-center p-[clamp(2rem,6vw,6rem)] max-[760px]:min-h-[auto] max-[760px]:px-6 max-[760px]:py-12">
         <div className="w-full max-w-[27rem]">
           <header className="mb-10 mt-12 max-[760px]:my-8">
@@ -78,6 +97,12 @@ export function Login() {
           </header>
 
           <form onSubmit={handleLogin} className="grid gap-[1.4rem]">
+            {erro ? (
+              <p className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300" role="alert">
+                {erro}
+              </p>
+            ) : null}
+
             <div className={fieldClass}>
               <label htmlFor="login-email" className={labelClass}>
                 E-mail
@@ -90,6 +115,7 @@ export function Login() {
                 placeholder="seu.email@instituicao.com"
                 autoComplete="email"
                 required
+                disabled={carregando}
                 className={inputClass}
               />
             </div>
@@ -106,12 +132,14 @@ export function Login() {
                 placeholder="Digite sua senha"
                 autoComplete="current-password"
                 required
+                disabled={carregando}
                 className={inputClass}
               />
             </div>
 
             <button
               type="submit"
+              disabled={carregando}
               className={[
                 'mt-2 flex min-h-[3.6rem] cursor-pointer items-center justify-between',
                 'rounded-[0.8rem] border border-[rgba(159,245,190,0.35)] px-[1.15rem]',
@@ -120,9 +148,10 @@ export function Login() {
                 'hover:-translate-y-px hover:brightness-[1.12] hover:shadow-[0_0.7rem_2rem_rgba(42,153,89,0.2)]',
                 'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-[#a0f2bb]',
                 'motion-reduce:transition-none',
+                'disabled:cursor-not-allowed disabled:opacity-60',
               ].join(' ')}
             >
-              <span>Entrar na plataforma</span>
+              <span>{carregando ? 'Entrando…' : 'Entrar na plataforma'}</span>
               <img src={arrowRightIcon} alt="" aria-hidden="true" className="ui-icon h-4 w-4" />
             </button>
           </form>

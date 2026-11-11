@@ -1,120 +1,58 @@
 
-import { useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import packageIcon from '../../assets/icons/package.svg'
 import closeIcon from '../../assets/icons/close.svg'
 import alertIcon from '../../assets/icons/alert.svg'
 import clockIcon from '../../assets/icons/clock.svg'
-
-type Lote = {
-  id: number
-  medicamento: string
-  numeroLote: string
-  unidade: string
-  quantidade: number
-  validade: string
-}
-
-const dadosIniciais: Lote[] = [
-  {
-    id: 1,
-    medicamento: 'Amoxicilina 500mg',
-    numeroLote: 'AMX-2026-014',
-    unidade: 'UBS Central',
-    quantidade: 120,
-    validade: '2026-11-08',
-  },
-  {
-    id: 2,
-    medicamento: 'Dipirona 500mg',
-    numeroLote: 'DIP-2026-001',
-    unidade: 'UBS Jardim',
-    quantidade: 250,
-    validade: '2026-11-25',
-  },
-  {
-    id: 3,
-    medicamento: 'Ibuprofeno 600mg',
-    numeroLote: 'IBU-2025-032',
-    unidade: 'UBS Sul',
-    quantidade: 80,
-    validade: '2026-10-20',
-  },
-  {
-    id: 4,
-    medicamento: 'Paracetamol 750mg',
-    numeroLote: 'PAR-2026-008',
-    unidade: 'UBS Norte',
-    quantidade: 300,
-    validade: '2027-03-15',
-  },
-  {
-    id: 5,
-    medicamento: 'Losartana 50mg',
-    numeroLote: 'LOS-2026-021',
-    unidade: 'UBS Central',
-    quantidade: 180,
-    validade: '2026-11-15',
-  },
-]
-
-function calcularDias(validade: string) {
-  const hoje = new Date()
-  hoje.setHours(0, 0, 0, 0)
-
-  const dataValidade = new Date(`${validade}T00:00:00`)
-
-  return Math.ceil(
-    (dataValidade.getTime() - hoje.getTime()) / (1000 * 60 * 60 * 24)
-  )
-}
-
-function getPrioridade(validade: string) {
-  const dias = calcularDias(validade)
-
-  if (dias < 0) return 'Vencido'
-  if (dias <= 7) return 'Crítico'
-  if (dias <= 30) return 'Atenção'
-
-  return 'Normal'
-}
+import { ApiError, listarMatrizSalvacao } from '../../api/client'
+import type { LoteMatrizApi } from '../../api/types'
+import { formatarDataBr } from '../../api/loteUtils'
 
 function MatrizSalvacao() {
+  const [lotes, setLotes] = useState<LoteMatrizApi[]>([])
+  const [carregando, setCarregando] = useState(true)
+  const [erro, setErro] = useState('')
   const [filtro, setFiltro] = useState('Todos')
   const [pesquisa, setPesquisa] = useState('')
 
-  const vencidos = dadosIniciais.filter(
-    (lote) => getPrioridade(lote.validade) === 'Vencido'
-  ).length
+  const carregar = useCallback(async () => {
+    setCarregando(true)
+    setErro('')
+    try {
+      const lista = await listarMatrizSalvacao()
+      setLotes(lista)
+    } catch (err) {
+      setErro(
+        err instanceof ApiError
+          ? err.message
+          : 'Falha ao carregar a matriz de salvação.'
+      )
+    } finally {
+      setCarregando(false)
+    }
+  }, [])
 
-  const criticos = dadosIniciais.filter(
-    (lote) => getPrioridade(lote.validade) === 'Crítico'
-  ).length
+  useEffect(() => {
+    void carregar()
+  }, [carregar])
 
-  const atencao = dadosIniciais.filter(
-    (lote) => getPrioridade(lote.validade) === 'Atenção'
-  ).length
+  const vencidos = lotes.filter((lote) => lote.prioridade === 'Vencido').length
+  const criticos = lotes.filter((lote) => lote.prioridade === 'Crítico').length
+  const atencao = lotes.filter((lote) => lote.prioridade === 'Atenção').length
 
-  const lotesFiltrados = dadosIniciais
+  const lotesFiltrados = lotes
     .filter((lote) => {
-      const prioridade = getPrioridade(lote.validade)
-
       const correspondeFiltro =
-        filtro === 'Todos' || prioridade === filtro
+        filtro === 'Todos' || lote.prioridade === filtro
 
       const correspondePesquisa =
         lote.medicamento.toLowerCase().includes(pesquisa.toLowerCase()) ||
-        lote.unidade.toLowerCase().includes(pesquisa.toLowerCase()) ||
+        (lote.unidade ?? '').toLowerCase().includes(pesquisa.toLowerCase()) ||
         lote.numeroLote.toLowerCase().includes(pesquisa.toLowerCase())
 
       return correspondeFiltro && correspondePesquisa
     })
-    .sort(
-      (a, b) => calcularDias(a.validade) - calcularDias(b.validade)
-    )
-
-  function formatarData(data: string) {
-    return new Date(`${data}T00:00:00`).toLocaleDateString('pt-BR')
-  }
+    .sort((a, b) => a.diasRestantes - b.diasRestantes)
 
   function classePrioridade(prioridade: string) {
     if (prioridade === 'Vencido') {
@@ -130,6 +68,12 @@ function MatrizSalvacao() {
     }
 
     return 'bg-emerald-500/10 text-emerald-400'
+  }
+
+  function textoTempoRestante(dias: number) {
+    if (dias < 0) return `Vencido há ${Math.abs(dias)} dias`
+    if (dias === 0) return 'Vence hoje'
+    return `${dias} dias`
   }
 
   return (
@@ -149,11 +93,17 @@ function MatrizSalvacao() {
         </p>
       </div>
 
+      {erro ? (
+        <p className="mb-6 rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-300" role="alert">
+          {erro}
+        </p>
+      ) : null}
+
       <div className="mb-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[
           {
             titulo: 'Lotes monitorados',
-            valor: dadosIniciais.length,
+            valor: lotes.length,
             cor: 'text-white',
             icone: packageIcon,
           },
@@ -191,7 +141,7 @@ function MatrizSalvacao() {
             </div>
 
             <p className={`text-3xl font-semibold ${item.cor}`}>
-              {item.valor}
+              {carregando ? '—' : item.valor}
             </p>
           </div>
         ))}
@@ -291,11 +241,14 @@ function MatrizSalvacao() {
             </thead>
 
             <tbody>
-              {lotesFiltrados.map((lote) => {
-                const dias = calcularDias(lote.validade)
-                const prioridade = getPrioridade(lote.validade)
-
-                return (
+              {carregando ? (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-[#829187]">
+                    Carregando matriz…
+                  </td>
+                </tr>
+              ) : (
+                lotesFiltrados.map((lote) => (
                   <tr
                     key={lote.id}
                     className="border-b border-[#293a30] last:border-0 hover:bg-[#17251c]"
@@ -309,7 +262,7 @@ function MatrizSalvacao() {
                     </td>
 
                     <td className="px-4 py-5 text-[#a6b3aa]">
-                      {lote.unidade}
+                      {lote.unidade ?? '—'}
                     </td>
 
                     <td className="px-4 py-5 text-[#a6b3aa]">
@@ -317,29 +270,25 @@ function MatrizSalvacao() {
                     </td>
 
                     <td className="px-4 py-5 text-[#a6b3aa]">
-                      {formatarData(lote.validade)}
+                      {formatarDataBr(lote.validade)}
                     </td>
 
                     <td className="px-4 py-5 text-[#a6b3aa]">
-                      {dias < 0
-                        ? `Vencido há ${Math.abs(dias)} dias`
-                        : dias === 0
-                          ? 'Vence hoje'
-                          : `${dias} dias`}
+                      {textoTempoRestante(lote.diasRestantes)}
                     </td>
 
                     <td className="px-4 py-5">
                       <span
-                        className={`rounded-full px-3 py-1 text-xs font-medium ${classePrioridade(prioridade)}`}
+                        className={`rounded-full px-3 py-1 text-xs font-medium ${classePrioridade(lote.prioridade)}`}
                       >
-                        {prioridade}
+                        {lote.prioridade}
                       </span>
                     </td>
                   </tr>
-                )
-              })}
+                ))
+              )}
 
-              {lotesFiltrados.length === 0 && (
+              {!carregando && lotesFiltrados.length === 0 && (
                 <tr>
                   <td
                     colSpan={7}
