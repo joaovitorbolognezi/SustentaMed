@@ -19,6 +19,7 @@
    - [3. Configurar a Conexão no Java](#3-configurar-a-conexão-no-java)
    - [4. Compilar o Projeto](#4-compilar-o-projeto)
    - [5. Executar a Aplicação](#5-executar-a-aplicação)
+   - [6. Frontend Web (opcional)](#6-frontend-web-opcional)
 6. [Executando pela IDE (IntelliJ IDEA / VS Code / Eclipse)](#-executando-pela-ide)
 7. [Endpoints da API REST Nativa](#-endpoints-da-api-rest-nativa)
 8. [Credenciais de Teste (Seed)](#-credenciais-de-teste-seed)
@@ -50,19 +51,21 @@ O backend foi implementado respeitando rigorosamente os diagramas da pasta `docs
   * Entidades associativas: `LoteMedicamento`, `SolicitacaoTransferencia`, `Descarte`, `EmpresaDescarte` e `UnidadeSaude`.
 * **Diagrama Entidade-Relacionamento (DER):** [docs/diagrama_der.png](docs/diagrama_der.png)  
   * 7 tabelas normalizadas com chaves primárias e relacionamentos com integridade referencial.
+* **Contrato REST (frontend):** [docs/ROTAS_BACKEND_FRONTEND.md](docs/ROTAS_BACKEND_FRONTEND.md)
 
 ---
 
 ## 📂 Estrutura do Projeto
 
 ```text
-backend/SustentaMed/
+SustentaMed/ (raiz do repositório AEP)
 ├── database/
 │   ├── schema.sql                     # Script DDL de criação do banco e tabelas
 │   └── seed.sql                       # Carga de dados iniciais (UBSs, usuários, medicamentos, lotes)
 ├── docs/
 │   ├── diagrama_classes.png           # Diagrama de Classes UML
-│   └── diagrama_der.png               # Diagrama de Banco de Dados DER
+│   ├── diagrama_der.png               # Diagrama de Banco de Dados DER
+│   └── ROTAS_BACKEND_FRONTEND.md      # Mapeamento API ↔ telas
 ├── lib/
 │   └── mysql-connector-j.jar          # Driver oficial JDBC do MySQL
 ├── bin/                               # Bytecodes compilados (.class)
@@ -98,6 +101,33 @@ backend/SustentaMed/
 │       ├── Main.java                  # Aplicação Console Interativa (Apresentação AEP)
 │       ├── ServidorHttp.java          # API REST Nativa (Porta 8080) com CORS para o Frontend
 │       └── TestaConexao.java          # Diagnóstico rápido do banco de dados
+├── frontend/                          # React + Vite + TypeScript + Tailwind
+│   ├── package.json
+│   ├── vite.config.ts
+│   ├── index.html
+│   ├── FRONTEND_GUIDELINES.md
+│   ├── README.md
+│   └── src/
+│       ├── api/
+│       │   ├── client.ts              # Cliente HTTP da API REST
+│       │   ├── auth.ts                # Sessão (token/usuário no navegador)
+│       │   ├── types.ts
+│       │   └── loteUtils.ts
+│       ├── components/
+│       │   ├── AppLayout.tsx
+│       │   ├── Sidebar.tsx
+│       │   ├── RequireAuth.tsx
+│       │   └── SvgRepoIcon.tsx
+│       ├── features/
+│       │   ├── auth/login.tsx
+│       │   ├── stock/Estoque.tsx
+│       │   ├── transfers/Transferencias.tsx
+│       │   ├── salvation/MatrizSalvacao.tsx
+│       │   └── descartes/Descartes.tsx
+│       ├── assets/icons/              # Ícones SVG (UI)
+│       ├── App.tsx
+│       ├── main.tsx
+│       └── index.css
 ├── executar_menu.bat                  # Executável do Menu no Console (Windows)
 ├── iniciar_servidor_http.bat          # Executável da API REST (Windows)
 ├── .gitignore                         # Arquivos ignorados no repositório Git
@@ -114,7 +144,8 @@ Para executar este projeto em qualquer máquina, você precisará de:
    java -version
    ```
 2. **MySQL Server** (versão 8.0 ou superior) em execução localmente na porta padrão `3306`.
-3. **Git** para clonar o repositório.
+3. **Node.js 18+** (somente para o frontend web).
+4. **Git** para clonar o repositório.
 
 ---
 
@@ -126,6 +157,8 @@ Abra o terminal (Git Bash, Prompt de Comando ou PowerShell) e clone o repositór
 git clone https://github.com/joaovitorbolognezi/SustentaMed.git
 cd SustentaMed
 ```
+
+> A pasta `bin/` **não** vai para o Git. Após clonar, compile o Java (passo 4).
 
 ---
 
@@ -152,7 +185,29 @@ private static final String DEFAULT_PASSWORD = ""; // <- Se o seu MySQL tiver se
 
 ---
 
-### 4. Executar a Aplicação
+### 4. Compilar o Projeto
+
+Gere os `.class` na pasta `bin/` (obrigatório na primeira vez e após alterar o Java):
+
+**Windows (PowerShell), na raiz do projeto:**
+
+```powershell
+New-Item -ItemType Directory -Force -Path bin | Out-Null
+javac -encoding UTF-8 -d bin -cp "lib/mysql-connector-j.jar" (Get-ChildItem -Recurse -Path src -Filter *.java).FullName
+```
+
+**Linux / macOS:**
+
+```bash
+mkdir -p bin
+find src -name "*.java" -print0 | xargs -0 javac -encoding UTF-8 -d bin -cp "lib/mysql-connector-j.jar"
+```
+
+Alternativa: abra o projeto na IDE, marque `src` como fonte, adicione `lib/mysql-connector-j.jar` e use **Run** em `ServidorHttp.java` ou `Main.java` (a IDE compila automaticamente).
+
+---
+
+### 5. Executar a Aplicação
 
 Você tem **duas formas** de executar o sistema:
 
@@ -194,10 +249,26 @@ O servidor iniciará em `http://localhost:8080` com **suporte nativo a CORS** at
 
 ---
 
+### 6. Frontend Web (opcional)
+
+Com a API já em execução:
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+Acesse a URL do Vite (ex.: `http://localhost:5173`). Login de teste na seção [Credenciais de Teste](#-credenciais-de-teste-seed).
+
+Build de produção: `npm run build` (saída em `frontend/dist/`). Deploy estático (ex.: Vercel) exige `VITE_API_BASE_URL` apontando para uma API acessível na internet.
+
+---
+
 ## 💻 Executando pela IDE
 
 ### IntelliJ IDEA:
-1. Abra o IntelliJ e vá em `File` > `Open...` e selecione a pasta `backend/SustentaMed`.
+1. Abra o IntelliJ e vá em `File` > `Open...` e selecione a **raiz do repositório** (pasta do projeto AEP/SustentaMed).
 2. Configure a pasta `src` como Sources Root (clique com botão direito em `src` > `Mark Directory as` > `Sources Root`).
 3. Adicione o driver JDBC:
    * Vá em `File` > `Project Structure` > `Modules` > aba `Dependencies`.
@@ -205,7 +276,7 @@ O servidor iniciará em `http://localhost:8080` com **suporte nativo a CORS** at
 4. Abra `src/com/sustentamed/app/Main.java` e clique no ícone verde de **Run** (Executar).
 
 ### Visual Studio Code:
-1. Abra a pasta `backend/SustentaMed` no VS Code.
+1. Abra a **raiz do repositório** no VS Code/Cursor.
 2. Instale a extensão **Extension Pack for Java** (se ainda não tiver).
 3. No menu lateral esquerdo, vá na seção **Java Projects** > **Referenced Libraries** > clique no ícone **`+`** e selecione o arquivo `lib/mysql-connector-j.jar`.
 4. Abra `Main.java` e clique em **Run**.
@@ -218,14 +289,37 @@ O servidor nativo `ServidorHttp.java` expõe os seguintes endpoints:
 
 | Método | Endpoint | Descrição |
 | :--- | :--- | :--- |
-| `POST` | `/api/auth/login` | Realiza autenticação e retorna dados do usuário |
+| `POST` | `/api/auth/login` | Autentica e retorna `token` Bearer + dados do usuário |
+| `GET` | `/api/auth/me` | Retorna o usuário da sessão (header `Authorization`) |
+| `POST` | `/api/auth/logout` | Encerra a sessão do token |
 | `GET` | `/api/lotes` | Lista todos os lotes com estoque e validade |
+| `GET` | `/api/lotes/{id}` | Detalhe de um lote específico |
 | `POST` | `/api/lotes` | Cadastra novo lote de medicamento |
 | `GET` | `/api/matriz-salvacao` | Retorna lotes com urgência (Crítico, Atenção, Vencido) |
 | `GET` | `/api/transferencias` | Lista todas as solicitações de transferência |
 | `POST` | `/api/transferencias` | Solicita redistribuição de lote para outra UBS |
 | `GET` | `/api/descartes` | Lista histórico de descartes ecológicos |
 | `GET` | `/api/unidades` | Lista todas as UBSs cadastradas |
+| `GET` | `/api/medicamentos` | Lista medicamentos do catálogo (formulário de lotes) |
+| `PATCH` | `/api/transferencias/{id}/status` | Aprova, rejeita ou cancela solicitação pendente |
+
+---
+
+## 🌐 Frontend React (integração com a API)
+
+O frontend em `frontend/` consome os endpoints acima. Em desenvolvimento, use o proxy do Vite (`/api` → `http://localhost:8080`).
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+1. Inicie o **Servidor HTTP** (Modo B) antes do frontend.
+2. Acesse a URL do Vite (porta padrão `5173`).
+3. Faça login com as credenciais do seed (tabela abaixo).
+
+Detalhes do contrato e rotas sem tela: [docs/ROTAS_BACKEND_FRONTEND.md](docs/ROTAS_BACKEND_FRONTEND.md).
 
 ---
 

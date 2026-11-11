@@ -5,11 +5,13 @@ import packageIcon from '../assets/icons/package.svg'
 import transferIcon from '../assets/icons/transfer.svg'
 import healthIcon from '../assets/icons/health.svg'
 import menuIcon from '../assets/icons/menu.svg'
+import alertIcon from '../assets/icons/alert.svg'
 
 const menuItems = [
   { name: 'Estoque e Lotes', path: '/estoque', icon: packageIcon },
   { name: 'Transferências', path: '/transferencias', icon: transferIcon },
   { name: 'Matriz de Salvação', path: '/matriz-salvacao', icon: healthIcon },
+  { name: 'Descartes Ecológicos', path: '/descartes', icon: alertIcon },
 ]
 
 export function Sidebar() {

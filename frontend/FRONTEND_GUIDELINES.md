@@ -25,6 +25,13 @@
   - [Close Circle](https://www.svgrepo.com/svg/528912/close-circle)
   - [Arrow Right](https://www.svgrepo.com/svg/535153/arrow-right)
 
+## Integração com a API
+
+- Chamadas HTTP ficam em `src/api/client.ts`; tipos em `src/api/types.ts`.
+- Em desenvolvimento, use rotas relativas (`/api/...`) — o Vite faz proxy para `localhost:8080`.
+- A sessão do login é guardada em `sessionStorage` (`src/api/auth.ts`); telas autenticadas usam `RequireAuth`.
+- Exiba erros de rede ou validação com mensagem clara; estados de carregamento em listas e formulários.
+
 ## Cores e temas
 
 - O modo escuro é o padrão; o controle de tema deve continuar disponível no cabeçalho das telas de gestão e manter a preferência do usuário.
