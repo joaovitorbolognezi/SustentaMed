@@ -14,5 +14,9 @@ public class AuthService {
         }
         return usuarioDAO.autenticar(email, senha);
     }
+
+    public Usuario obterPorId(int id) throws SQLException {
+        return usuarioDAO.buscarPorId(id);
+    }
 }
 
