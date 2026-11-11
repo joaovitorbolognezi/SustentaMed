@@ -21,6 +21,10 @@ public class EstoqueService {
         return loteDAO.listarMatrizSalvacao();
     }
 
+    public LoteMedicamento buscarPorId(int id) throws SQLException {
+        return loteDAO.buscarPorId(id);
+    }
+
     public void cadastrarLote(LoteMedicamento lote) throws SQLException {
         if (lote.getQuantidade() <= 0) {
             throw new IllegalArgumentException("A quantidade do lote deve ser maior que zero.");

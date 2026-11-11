@@ -19,6 +19,8 @@ import java.net.InetSocketAddress;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Servidor HTTP REST nativo em Java Puro (sem Spring, sem bibliotecas externas).
@@ -33,16 +35,20 @@ public class ServidorHttp {
     private static final DescarteService descarteService = new DescarteService();
     private static final UnidadeSaudeDAO ubsDAO = new UnidadeSaudeDAO();
     private static final MedicamentoDAO medDAO = new MedicamentoDAO();
+    private static final ConcurrentHashMap<String, Integer> SESSOES = new ConcurrentHashMap<>();
 
     public static void main(String[] args) throws IOException {
         HttpServer server = HttpServer.create(new InetSocketAddress(PORTA), 0);
 
         server.createContext("/api/auth/login", new LoginHandler());
+        server.createContext("/api/auth/me", new AuthMeHandler());
+        server.createContext("/api/auth/logout", new AuthLogoutHandler());
         server.createContext("/api/lotes", new LotesHandler());
         server.createContext("/api/matriz-salvacao", new MatrizHandler());
         server.createContext("/api/transferencias", new TransferenciasHandler());
         server.createContext("/api/descartes", new DescartesHandler());
         server.createContext("/api/unidades", new UnidadesHandler());
+        server.createContext("/api/medicamentos", new MedicamentosHandler());
 
         server.setExecutor(null);
         System.out.println("===============================================================");
@@ -77,6 +83,83 @@ public class ServidorHttp {
         }
     }
 
+    private static String escaparJson(String valor) {
+        if (valor == null) return "";
+        return valor.replace("\\", "\\\\").replace("\"", "\\\"");
+    }
+
+    private static String criarTokenSessao(int usuarioId) {
+        String token = UUID.randomUUID().toString();
+        SESSOES.put(token, usuarioId);
+        return token;
+    }
+
+    private static String extrairBearerToken(HttpExchange exchange) {
+        String auth = exchange.getRequestHeaders().getFirst("Authorization");
+        if (auth != null && auth.regionMatches(true, 0, "Bearer ", 0, 7)) {
+            return auth.substring(7).trim();
+        }
+        return null;
+    }
+
+    private static Integer resolverUsuarioDaRequisicao(HttpExchange exchange) {
+        String token = extrairBearerToken(exchange);
+        if (token == null || token.isEmpty()) {
+            return null;
+        }
+        return SESSOES.get(token);
+    }
+
+    private static void encerrarSessao(String token) {
+        if (token != null) {
+            SESSOES.remove(token);
+        }
+    }
+
+    private static String serializarUsuarioJson(Usuario u) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("{\"id\":").append(u.getId())
+          .append(",\"nome\":\"").append(escaparJson(u.getNome()))
+          .append("\",\"email\":\"").append(escaparJson(u.getEmail()))
+          .append("\",\"tipo\":\"").append(u.getTipoUsuario()).append("\"");
+        if (u.getUnidadeSaude() != null) {
+            sb.append(",\"unidade\":{\"id\":").append(u.getUnidadeSaude().getId())
+              .append(",\"nome\":\"").append(escaparJson(u.getUnidadeSaude().getNome())).append("\"}");
+        }
+        sb.append("}");
+        return sb.toString();
+    }
+
+    private static String serializarLoteJson(LoteMedicamento l) {
+        return "{\"id\":" + l.getId()
+                + ",\"medicamento\":\"" + escaparJson(l.getMedicamento() != null ? l.getMedicamento().getNome() : "")
+                + "\",\"numeroLote\":\"" + escaparJson(l.getNumeroLote())
+                + "\",\"quantidade\":" + l.getQuantidade()
+                + ",\"validade\":\"" + l.getDataValidade()
+                + "\",\"status\":\"" + l.getStatus()
+                + "\",\"unidade\":\"" + escaparJson(l.getUnidadeSaude() != null ? l.getUnidadeSaude().getNome() : "")
+                + "\",\"unidadeId\":" + (l.getUnidadeSaude() != null ? l.getUnidadeSaude().getId() : 0)
+                + ",\"medicamentoId\":" + (l.getMedicamento() != null ? l.getMedicamento().getId() : 0)
+                + ",\"diasRestantes\":" + l.diasParaVencimento()
+                + ",\"prioridade\":\"" + escaparJson(l.getPrioridadeMatriz()) + "\"}";
+    }
+
+    private static String serializarDescarteJson(Descarte d) {
+        String med = (d.getLoteMedicamento() != null && d.getLoteMedicamento().getMedicamento() != null)
+                ? d.getLoteMedicamento().getMedicamento().getNome() : "";
+        String lote = (d.getLoteMedicamento() != null) ? d.getLoteMedicamento().getNumeroLote() : "";
+        String ubs = (d.getUnidadeSaude() != null) ? d.getUnidadeSaude().getNome() : "";
+        String emp = (d.getEmpresaDescarte() != null) ? d.getEmpresaDescarte().getRazaoSocial() : "";
+        return "{\"id\":" + d.getId()
+                + ",\"motivo\":\"" + escaparJson(d.getMotivo())
+                + "\",\"status\":\"" + d.getStatus()
+                + "\",\"data\":\"" + d.getDataSolicitacao()
+                + "\",\"medicamento\":\"" + escaparJson(med)
+                + "\",\"numeroLote\":\"" + escaparJson(lote)
+                + "\",\"unidade\":\"" + escaparJson(ubs)
+                + "\",\"empresa\":\"" + escaparJson(emp) + "\"}";
+    }
+
     // Handler de Login
     static class LoginHandler implements HttpHandler {
         @Override
@@ -95,9 +178,9 @@ public class ServidorHttp {
                 try {
                     Usuario u = authService.login(email, senha);
                     if (u != null) {
-                        String json = "{\"sucesso\":true,\"usuario\":{\"id\":" + u.getId() +
-                                      ",\"nome\":\"" + u.getNome() + "\",\"email\":\"" + u.getEmail() +
-                                      "\",\"tipo\":\"" + u.getTipoUsuario() + "\"}}";
+                        String token = criarTokenSessao(u.getId());
+                        String json = "{\"sucesso\":true,\"token\":\"" + token + "\",\"usuario\":"
+                                + serializarUsuarioJson(u) + "}";
                         enviarRespostaJson(exchange, 200, json);
                     } else {
                         enviarRespostaJson(exchange, 401, "{\"sucesso\":false,\"mensagem\":\"Credenciais inválidas\"}");
@@ -111,6 +194,54 @@ public class ServidorHttp {
         }
     }
 
+    static class AuthMeHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            aplicarCors(exchange);
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+            if (!"GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(405, -1);
+                return;
+            }
+            try {
+                Integer userId = resolverUsuarioDaRequisicao(exchange);
+                if (userId == null) {
+                    enviarRespostaJson(exchange, 401, "{\"sucesso\":false,\"mensagem\":\"Sessão inválida ou expirada\"}");
+                    return;
+                }
+                Usuario u = authService.obterPorId(userId);
+                if (u == null) {
+                    enviarRespostaJson(exchange, 401, "{\"sucesso\":false,\"mensagem\":\"Usuário não encontrado\"}");
+                    return;
+                }
+                enviarRespostaJson(exchange, 200, "{\"usuario\":" + serializarUsuarioJson(u) + "}");
+            } catch (Exception e) {
+                enviarRespostaJson(exchange, 500, "{\"sucesso\":false,\"erro\":\"" + escaparJson(e.getMessage()) + "\"}");
+            }
+        }
+    }
+
+    static class AuthLogoutHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            aplicarCors(exchange);
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+            if (!"POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(405, -1);
+                return;
+            }
+            String token = extrairBearerToken(exchange);
+            encerrarSessao(token);
+            enviarRespostaJson(exchange, 200, "{\"sucesso\":true}");
+        }
+    }
+
     // Handler de Lotes
     static class LotesHandler implements HttpHandler {
         @Override
@@ -121,25 +252,30 @@ public class ServidorHttp {
                 return;
             }
 
+            String path = exchange.getRequestURI().getPath();
+
             try {
-                if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                if (path.matches("/api/lotes/\\d+") && "GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                    int id = Integer.parseInt(path.replaceAll(".*/(\\d+)$", "$1"));
+                    LoteMedicamento lote = estoqueService.buscarPorId(id);
+                    if (lote == null) {
+                        enviarRespostaJson(exchange, 404, "{\"sucesso\":false,\"mensagem\":\"Lote não encontrado\"}");
+                    } else {
+                        enviarRespostaJson(exchange, 200, serializarLoteJson(lote));
+                    }
+                    return;
+                }
+
+                if ("/api/lotes".equals(path) && "GET".equalsIgnoreCase(exchange.getRequestMethod())) {
                     List<LoteMedicamento> lotes = estoqueService.listarTodos();
                     StringBuilder sb = new StringBuilder("[");
                     for (int i = 0; i < lotes.size(); i++) {
-                        LoteMedicamento l = lotes.get(i);
                         if (i > 0) sb.append(",");
-                        sb.append("{\"id\":").append(l.getId())
-                          .append(",\"medicamento\":\"").append(l.getMedicamento() != null ? l.getMedicamento().getNome() : "")
-                          .append("\",\"numeroLote\":\"").append(l.getNumeroLote())
-                          .append("\",\"quantidade\":").append(l.getQuantidade())
-                          .append(",\"validade\":\"").append(l.getDataValidade())
-                          .append("\",\"status\":\"").append(l.getStatus())
-                          .append("\",\"unidade\":\"").append(l.getUnidadeSaude() != null ? l.getUnidadeSaude().getNome() : "")
-                          .append("\"}");
+                        sb.append(serializarLoteJson(lotes.get(i)));
                     }
                     sb.append("]");
                     enviarRespostaJson(exchange, 200, sb.toString());
-                } else if ("POST".equalsIgnoreCase(exchange.getRequestMethod())) {
+                } else if ("/api/lotes".equals(path) && "POST".equalsIgnoreCase(exchange.getRequestMethod())) {
                     String body = lerCorpo(exchange);
                     String numeroLote = extrairCampoJson(body, "numeroLote");
                     int qtd = Integer.parseInt(extrairCampoJson(body, "quantidade"));
@@ -211,7 +347,30 @@ public class ServidorHttp {
                 return;
             }
 
+            String path = exchange.getRequestURI().getPath();
+
             try {
+                if (path.matches("/api/transferencias/\\d+/status")
+                        && "PATCH".equalsIgnoreCase(exchange.getRequestMethod())) {
+                    int id = Integer.parseInt(path.replaceAll(".*/(\\d+)/status", "$1"));
+                    String body = lerCorpo(exchange);
+                    String status = extrairCampoJson(body, "status").toUpperCase();
+
+                    if ("APROVADA".equals(status)) {
+                        transferenciaService.aprovarTransferencia(id);
+                    } else if ("REJEITADA".equals(status)) {
+                        transferenciaService.rejeitarTransferencia(id);
+                    } else if ("CANCELADA".equals(status)) {
+                        transferenciaService.cancelarTransferencia(id);
+                    } else {
+                        enviarRespostaJson(exchange, 400,
+                                "{\"sucesso\":false,\"erro\":\"Status inválido. Use APROVADA, REJEITADA ou CANCELADA.\"}");
+                        return;
+                    }
+                    enviarRespostaJson(exchange, 200, "{\"sucesso\":true}");
+                    return;
+                }
+
                 if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
                     List<SolicitacaoTransferencia> lista = transferenciaService.listarTodas();
                     StringBuilder sb = new StringBuilder("[");
@@ -261,16 +420,42 @@ public class ServidorHttp {
                     List<Descarte> lista = descarteService.listarTodos();
                     StringBuilder sb = new StringBuilder("[");
                     for (int i = 0; i < lista.size(); i++) {
-                        Descarte d = lista.get(i);
                         if (i > 0) sb.append(",");
-                        sb.append("{\"id\":").append(d.getId())
-                          .append(",\"motivo\":\"").append(d.getMotivo())
-                          .append("\",\"status\":\"").append(d.getStatus())
-                          .append("\",\"data\":\"").append(d.getDataSolicitacao())
-                          .append("\"}");
+                        sb.append(serializarDescarteJson(lista.get(i)));
                     }
                     sb.append("]");
                     enviarRespostaJson(exchange, 200, sb.toString());
+                }
+            } catch (Exception e) {
+                enviarRespostaJson(exchange, 500, "{\"sucesso\":false,\"erro\":\"" + e.getMessage() + "\"}");
+            }
+        }
+    }
+
+    // Handler de Medicamentos (catálogo para cadastro de lotes)
+    static class MedicamentosHandler implements HttpHandler {
+        @Override
+        public void handle(HttpExchange exchange) throws IOException {
+            aplicarCors(exchange);
+            if ("OPTIONS".equalsIgnoreCase(exchange.getRequestMethod())) {
+                exchange.sendResponseHeaders(204, -1);
+                return;
+            }
+
+            try {
+                if ("GET".equalsIgnoreCase(exchange.getRequestMethod())) {
+                    List<Medicamento> lista = medDAO.listarTodos();
+                    StringBuilder sb = new StringBuilder("[");
+                    for (int i = 0; i < lista.size(); i++) {
+                        Medicamento m = lista.get(i);
+                        if (i > 0) sb.append(",");
+                        sb.append("{\"id\":").append(m.getId())
+                          .append(",\"nome\":\"").append(m.getNome()).append("\"}");
+                    }
+                    sb.append("]");
+                    enviarRespostaJson(exchange, 200, sb.toString());
+                } else {
+                    exchange.sendResponseHeaders(405, -1);
                 }
             } catch (Exception e) {
                 enviarRespostaJson(exchange, 500, "{\"sucesso\":false,\"erro\":\"" + e.getMessage() + "\"}");

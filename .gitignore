@@ -45,8 +45,13 @@ dist-ssr
 *.sln
 *.sw?
 
-# Arquivos locais do DBeaver
-database/*
+# Scripts SQL versionados: database/schema.sql e database/seed.sql
+# Ignorar apenas artefatos locais (DBeaver, SQLite, rascunhos)
+database/.dbeaver/
+database/.project
+database/Scripts/
+database/*.db
+database/**/*.bak
 
 # Dependências e builds do frontend
 frontend/node_modules/

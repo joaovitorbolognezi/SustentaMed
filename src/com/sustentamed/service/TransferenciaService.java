@@ -67,7 +67,25 @@ public class TransferenciaService {
     }
 
     public void rejeitarTransferencia(int transferenciaId) throws SQLException {
+        SolicitacaoTransferencia st = transfDAO.buscarPorId(transferenciaId);
+        if (st == null) {
+            throw new IllegalArgumentException("Transferência não encontrada.");
+        }
+        if (st.getStatus() != StatusTransferencia.PENDENTE) {
+            throw new IllegalStateException("Apenas transferências pendentes podem ser rejeitadas.");
+        }
         transfDAO.atualizarStatus(transferenciaId, StatusTransferencia.REJEITADA);
+    }
+
+    public void cancelarTransferencia(int transferenciaId) throws SQLException {
+        SolicitacaoTransferencia st = transfDAO.buscarPorId(transferenciaId);
+        if (st == null) {
+            throw new IllegalArgumentException("Transferência não encontrada.");
+        }
+        if (st.getStatus() != StatusTransferencia.PENDENTE) {
+            throw new IllegalStateException("Apenas transferências pendentes podem ser canceladas.");
+        }
+        transfDAO.atualizarStatus(transferenciaId, StatusTransferencia.CANCELADA);
     }
 
     public List<SolicitacaoTransferencia> listarTodas() throws SQLException {
