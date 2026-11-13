@@ -16,10 +16,8 @@
 5. [Passo a Passo: Como Rodar do GitHub](#-passo-a-passo-como-rodar-do-github)
    - [1. Clonar o Repositório](#1-clonar-o-repositório)
    - [2. Configurar o Banco de Dados MySQL](#2-configurar-o-banco-de-dados-mysql)
-   - [3. Configurar a Conexão no Java](#3-configurar-a-conexão-no-java)
-   - [4. Compilar o Projeto](#4-compilar-o-projeto)
-   - [5. Executar a Aplicação](#5-executar-a-aplicação)
-   - [6. Frontend Web (opcional)](#6-frontend-web-opcional)
+   - [3. Executar com 1 Clique no Windows (Recomendado)](#3-executar-com-1-clique-no-windows-recomendado)
+   - [4. Execução Manual ou Linux / macOS (Opcional)](#4-execução-manual-ou-linux--macos-opcional)
 6. [Executando pela IDE (IntelliJ IDEA / VS Code / Eclipse)](#-executando-pela-ide)
 7. [Endpoints da API REST Nativa](#-endpoints-da-api-rest-nativa)
 8. [Credenciais de Teste (Seed)](#-credenciais-de-teste-seed)
@@ -128,8 +126,8 @@ SustentaMed/ (raiz do repositório AEP)
 │       ├── App.tsx
 │       ├── main.tsx
 │       └── index.css
-├── executar_menu.bat                  # Executável do Menu no Console (Windows)
-├── iniciar_servidor_http.bat          # Executável da API REST (Windows)
+├── executar_console.bat               # 1-Clique: Inicia o Menu Interativo no Console/Terminal
+├── executar_web.bat                   # 1-Clique: Inicia o Sistema Web Completo (API + Web + Navegador)
 ├── .gitignore                         # Arquivos ignorados no repositório Git
 └── README.md                          # Esta documentação
 ```
@@ -158,8 +156,6 @@ git clone https://github.com/joaovitorbolognezi/SustentaMed.git
 cd SustentaMed
 ```
 
-> A pasta `bin/` **não** vai para o Git. Após clonar, compile o Java (passo 4).
-
 ---
 
 ### 2. Configurar o Banco de Dados MySQL
@@ -171,57 +167,37 @@ No seu gerenciador de banco (MySQL Workbench, DBeaver ou terminal MySQL):
    * Abra e execute o arquivo `database/seed.sql`.
    * Ele carregará as UBSs, usuários, catálogo de medicamentos e lotes para teste da Matriz de Salvação.
 
----
-
-### 3. Configurar a Conexão no Java
-Abra o arquivo `src/com/sustentamed/factory/ConnectionFactory.java`:
-```java
-private static final String DEFAULT_URL = "jdbc:mysql://localhost:3306/sistema_saude?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8";
-private static final String DEFAULT_USER = "root";
-private static final String DEFAULT_PASSWORD = ""; // deixe vazio
-```
-> **Dica:** Você também pode informar a senha sem alterar o código, passando o parâmetro ao rodar:  
-> `java -Ddb.password=suasenha -cp "bin;lib/mysql-connector-j.jar" com.sustentamed.app.Main`
+> ℹ️ **Nota sobre a Conexão:**  
+> Por padrão, o Java já vem configurado para conectar em `localhost:3306`, com usuário `root` e senha vazia (padrão nativo do XAMPP/WAMP/MySQL local).  
+> **Não é necessário alterar nada no código**, a menos que o seu MySQL utilize uma senha pessoal — se for o caso, basta informá-la em `src/com/sustentamed/factory/ConnectionFactory.java` (campo `DEFAULT_PASSWORD`).
 
 ---
 
-### 4. Compilar o Projeto
+### 3. Executar com 1 Clique no Windows (Recomendado)
 
-Gere os `.class` na pasta `bin/` (obrigatório na primeira vez e após alterar o Java):
+> 💡 **Compilação e Instalação 100% Automáticas:**  
+> No Windows, você **não** precisa compilar manualmente o Java nem rodar comandos do `npm`. Os arquivos `.bat` verificam o ambiente e preparam tudo sozinhos na primeira execução!
 
-**Windows (PowerShell), na raiz do projeto:**
+Basta escolher como deseja utilizar o sistema e dar um duplo clique no arquivo correspondente na raiz do projeto:
 
-```powershell
-New-Item -ItemType Directory -Force -Path bin | Out-Null
-javac -encoding UTF-8 -d bin -cp "lib/mysql-connector-j.jar" (Get-ChildItem -Recurse -Path src -Filter *.java).FullName
-```
-
-**Linux / macOS:**
-
-```bash
-mkdir -p bin
-find src -name "*.java" -print0 | xargs -0 javac -encoding UTF-8 -d bin -cp "lib/mysql-connector-j.jar"
-```
-
-Alternativa: abra o projeto na IDE, marque `src` como fonte, adicione `lib/mysql-connector-j.jar` e use **Run** em `ServidorHttp.java` ou `Main.java` (a IDE compila automaticamente).
+#### 🚀 Modo Web Completo (Navegador)
+* Dê um duplo clique no arquivo **`executar_web.bat`**.
+* **O que acontece automaticamente:**
+  1. Valida se o Java e o Node.js estão disponíveis no computador.
+  2. Compila as classes Java do backend para a pasta `bin/` (se ainda não compiladas).
+  3. Inicia o **Servidor REST HTTP (Porta 8080)** em uma janela dedicada de console.
+  4. Instala os pacotes do frontend (`npm install`) na primeira vez.
+  5. Inicia o servidor Vite e **abre o seu navegador automaticamente** em `http://localhost:5173`.
 
 ---
 
-### 5. Executar a Aplicação
-
-Você tem **duas formas** de executar o sistema:
-
-#### Modo A: Menu Interativo no Console
-* **Pelo Windows:** Dê um duplo clique no arquivo `executar_menu.bat`  
-* **Ou pelo terminal:**
-  * **Windows:**
-    ```bash
-    java -cp "bin;lib/mysql-connector-j.jar" com.sustentamed.app.Main
-    ```
-  * **Linux / macOS:**
-    ```bash
-    java -cp "bin:lib/mysql-connector-j.jar" com.sustentamed.app.Main
-    ```
+#### 💻 Modo Terminal / Console Interativo
+* Dê um duplo clique no arquivo **`executar_console.bat`**.
+* **O que acontece automaticamente:**
+  1. Valida o Java no sistema.
+  2. Compila as classes Java do backend caso seja a primeira execução.
+  3. Abre imediatamente o menu interativo com suporte completo a caracteres UTF-8.
+  4. Mantém a janela aberta após o encerramento da sessão.
 
 **Recursos disponíveis no Menu Console:**
 * Autenticação de Farmacêutica/Enfermeira com validação de senha.
@@ -233,35 +209,40 @@ Você tem **duas formas** de executar o sistema:
 
 ---
 
-#### Modo B: Servidor HTTP REST Nativo 
-* **Pelo Windows:** Dê um duplo clique no arquivo `iniciar_servidor_http.bat`  
-* **Ou pelo terminal:**
-  * **Windows:**
-    ```bash
-    java -cp "bin;lib/mysql-connector-j.jar" com.sustentamed.app.ServidorHttp
-    ```
-  * **Linux / macOS:**
-    ```bash
-    java -cp "bin:lib/mysql-connector-j.jar" com.sustentamed.app.ServidorHttp
-    ```
+### 4. Execução Manual ou Linux / macOS (Opcional)
 
-O servidor iniciará em `http://localhost:8080` com **suporte nativo a CORS** ativado, pronto para responder às requisições do frontend React!
+Caso esteja no Linux/macOS ou queira executar os comandos manualmente pelo terminal:
 
----
+#### A) Compilar o Backend Java
+* **Windows (PowerShell):**
+  ```powershell
+  New-Item -ItemType Directory -Force -Path bin | Out-Null
+  javac -encoding UTF-8 -d bin -cp "lib/mysql-connector-j.jar" (Get-ChildItem -Recurse -Path src -Filter *.java).FullName
+  ```
+* **Linux / macOS:**
+  ```bash
+  mkdir -p bin
+  find src -name "*.java" -print0 | xargs -0 javac -encoding UTF-8 -d bin -cp "lib/mysql-connector-j.jar"
+  ```
 
-### 6. Frontend Web (opcional)
+#### B) Rodar o Menu no Console
+* **Windows:** `java -cp "bin;lib/mysql-connector-j.jar" com.sustentamed.app.Main`
+* **Linux / macOS:** `java -cp "bin:lib/mysql-connector-j.jar" com.sustentamed.app.Main`
 
-Com a API já em execução:
+#### C) Rodar a API REST
+* **Windows:** `java -cp "bin;lib/mysql-connector-j.jar" com.sustentamed.app.ServidorHttp`
+* **Linux / macOS:** `java -cp "bin:lib/mysql-connector-j.jar" com.sustentamed.app.ServidorHttp`
+*(Inicia em `http://localhost:8080` com CORS ativado)*
 
+#### D) Rodar o Frontend Web
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
+Acesse `http://localhost:5173` no navegador. Credenciais de teste na seção [Credenciais de Teste](#-credenciais-de-teste-seed).
 
-Acesse a URL do Vite (ex.: `http://localhost:5173`). Login de teste na seção [Credenciais de Teste](#-credenciais-de-teste-seed).
-
-Build de produção: `npm run build` (saída em `frontend/dist/`). Deploy estático (ex.: Vercel) exige `VITE_API_BASE_URL` apontando para uma API acessível na internet.
+Para gerar o build de produção: `npm run build` (saída em `frontend/dist/`).
 
 ---
 
