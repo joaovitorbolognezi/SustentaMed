@@ -1,9 +1,9 @@
-# 💊 SustentaMed - Backend (Java Puro + JDBC + MySQL)
+# 💊 SustentaMed - Backend (Java Puro + JDBC + MySQL + React)
 
 > **Projeto Acadêmico:** AEP - Atividade Estruturada de Prática (4º Semestre - 2026.2)  
 > **Curso:** Bacharelado em Engenharia de Software — UniCesumar  
 > **ODS Alinhado:** [ODS 3 – Saúde e Bem-Estar](https://brasil.un.org/pt-br/sdgs/3) (Metas 3.8 e 3.b)  
-> **Tecnologia:** Java SE (Standard Edition) Puro + JDBC + MySQL Local  
+> **Tecnologia:** Java SE (Standard Edition) Puro + JDBC + MySQL Local + React + Tailwind CSS
 > **Integrantes:** João Vitor Bolognezi Portela, Lucas França Peloi, Murilo Bianco Montoia  
 
 ---
@@ -178,7 +178,7 @@ Abra o arquivo `src/com/sustentamed/factory/ConnectionFactory.java`:
 ```java
 private static final String DEFAULT_URL = "jdbc:mysql://localhost:3306/sistema_saude?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC&characterEncoding=UTF-8";
 private static final String DEFAULT_USER = "root";
-private static final String DEFAULT_PASSWORD = ""; // <- Se o seu MySQL tiver senha, informe aqui
+private static final String DEFAULT_PASSWORD = ""; // deixe vazio
 ```
 > **Dica:** Você também pode informar a senha sem alterar o código, passando o parâmetro ao rodar:  
 > `java -Ddb.password=suasenha -cp "bin;lib/mysql-connector-j.jar" com.sustentamed.app.Main`
